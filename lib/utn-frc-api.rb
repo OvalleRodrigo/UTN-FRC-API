@@ -4,7 +4,7 @@ class UTN
 	include HTTParty
 	# debug_output $stdout
 
-	attr_reader :legajo, :dominio, :password, :cookie_sesion
+	attr_reader :legajo, :dominio, :password, :cookie_sesion, :academico3
 
 	base_uri 'http://www.frc.utn.edu.ar'
 
@@ -15,6 +15,12 @@ class UTN
 		@legajo = legajo
 		@dominio = DOMINIOS[dominio][0]
 		@password = password
+
+		nueva_sesion
+
+	end
+
+	def get_cookie_sesion
 
 		@cookie_sesion = "pag=2; rec=0; usr=#{@legajo}%40#{@dominio}.frc.utn.edu.ar"
 
@@ -34,7 +40,27 @@ class UTN
 				follow_redirects: false)
 
 		@cookie_sesion << "; "
-		@cookie_sesion << @post_response.headers['Set-Cookie']
+		@cookie_sesion << post_response.headers['Set-Cookie']
+		
+	end
+
+	def get_academico3
+
+		@academico3 = self.class.get(
+				'/academico3',
+				headers:{'Cookie'=> @cookie_sesion}
+			)
+		
+		@cookie_sesion << "; "
+		@cookie_sesion << @academico3.headers['Set-Cookie']
+	end
+
+	def nueva_sesion
+		@cookie_sesion = ""
+
+		get_cookie_sesion
+
+		get_academico3
 	end
 
 	def self.indice_dominio
@@ -42,5 +68,12 @@ class UTN
 			puts "#{i}: #{valor[0]}"
 		end
 	end
+
+	def calendario
+	
+
+
+	end
+
 
 end
