@@ -1,4 +1,5 @@
 require "httparty"
+require "nokogiri"
 
 class UTN
 	include HTTParty
@@ -70,9 +71,20 @@ class UTN
 	end
 
 	def calendario
+
+		parsed_academico3 = Nokogiri::HTML(@academico3)
 	
+		cal_str = parsed_academico3.css('#calendar-container').first.next_element.to_xml.match(/var\s+dateInfo\s+=\s+{(.*?)};/m)[1]
 
+		cal_str.strip!
+		cal_str.gsub!(/<br\s*\/>|\s+/, " ")
+		cal_str.gsub!(/(&nbsp;)+/, " && ")#Para separar elementos de la misma fecha en el string
 
+		cal_str_encoded = cal_str.force_encoding('iso-8859-1').encode('utf-8')#Por problemas con los acentos etc
+
+		cal_array = cal_str_encoded.split(/"\s*,\s*"/)#Para separar fechas en un array
+
+		cal_hash = cal_array.map {|e| e.split('":"')}.to_h
 	end
 
 
