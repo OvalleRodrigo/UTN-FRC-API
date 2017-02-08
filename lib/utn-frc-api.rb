@@ -1,13 +1,17 @@
 require "httparty"
 require "nokogiri"
 
-class UTN
-	include HTTParty
+module Utn
+
+	class AUTOGESTION
+		include HTTParty
 	# debug_output $stdout
 
 	attr_reader :legajo, :dominio, :password, :cookie_sesion, :academico3
 
 	base_uri 'http://www.frc.utn.edu.ar'
+
+	SEPARADOR_CALENDARIO = " && "
 
 	DOMINIOS = [["cbasicas"], ["civil"], ["computos"], ["decanato"], ["egresado"], ["electrica"], ["electronica"], ["extension"], ["industrial"], ["mecanica"], ["metalurgica"], ["org"], ["posgrado"], ["punilla"], ["quimica"], ["radio"], ["sa"], ["sae"], ["scdt"], ["sistemas"], ["tecnicatura"], ["virtual"], ["frc"]]
 
@@ -48,8 +52,8 @@ class UTN
 	def get_academico3
 
 		@academico3 = self.class.get(
-				'/academico3',
-				headers:{'Cookie'=> @cookie_sesion}
+			'/academico3',
+			headers:{'Cookie'=> @cookie_sesion}
 			)
 		
 		@cookie_sesion << "; "
@@ -73,12 +77,12 @@ class UTN
 	def calendario
 
 		parsed_academico3 = Nokogiri::HTML(@academico3)
-	
+
 		cal_str = parsed_academico3.css('#calendar-container').first.next_element.to_xml.match(/var\s+dateInfo\s+=\s+{(.*?)};/m)[1]
 
 		cal_str.strip!
 		cal_str.gsub!(/<br\s*\/>|\s+/, " ")
-		cal_str.gsub!(/(&nbsp;)+/, " && ")#Para separar elementos de la misma fecha en el string
+		cal_str.gsub!(/(&nbsp;)+/, SEPARADOR_CALENDARIO)#Para separar elementos de la misma fecha en el string
 
 		cal_str_encoded = cal_str.force_encoding('iso-8859-1').encode('utf-8')#Por problemas con los acentos etc
 
@@ -89,3 +93,6 @@ class UTN
 
 
 end
+
+end
+
