@@ -11,9 +11,9 @@ module UTN
 
 
 	class Calendario
-		
-		@cal
-
+		#TODO: agregar discriinacion de eventos por tipo (feriado, parcial final) (proximo, todos)
+		#TODO: agregar eventos en un intervalo (año, mes, fecha1..fecha2)
+		#TODO: excepciones (crear especificas)
 		def initialize(academico3)
 
 			cal_str = academico3.css('#calendar-container').first.next_element.to_xml.match(/var\s+dateInfo\s+=\s+{(.*?)};/m)[1]
@@ -31,7 +31,7 @@ module UTN
 			@cal = cal_array.map do |evnt|
 				evnt_arr = evnt.split('":"')
 				evnt_arr[0] = Date.parse(evnt_arr[0])
-				evnt_arr[1] = evnt_arr[1].gsub('"','').split(SEPARADOR_CALENDARIO)
+				evnt_arr[1] = evnt_arr[1].gsub('"','').split(SEPARADOR_CALENDARIO) #gsub porque quedan las ultimas comillas
 				evnt_arr
 			end.to_h
 
@@ -68,7 +68,7 @@ module UTN
 	end
 
 	class Materia
-
+		#TODO: (0) Crear materias @duh
 	end
 
 	class Autogestion		
@@ -126,6 +126,8 @@ module UTN
 		end
 
 		def nueva_sesion
+			#TODO: En algun momento encargarme de poder obtener segun año academico (60)
+
 			@cookie_sesion = ""
 
 			get_cookie_sesion
