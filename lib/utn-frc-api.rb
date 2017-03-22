@@ -1,6 +1,5 @@
 require "httparty"
 require "nokogiri"
-require "erb" #Encoding for URL
 require "date"
 
 require_relative "model/calendario"
