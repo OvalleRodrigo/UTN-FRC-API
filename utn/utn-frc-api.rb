@@ -6,6 +6,8 @@ require_relative 'model/calendario'
 require_relative 'model/mensajes'
 
 module UTN
+	#TODO: Tratar exepciones (no inicia sesion, cookie vencida...)
+	#TODO: Incluir los dominios con nombre completo para estetica (sistemas: Ing. en Sistemas, por ejemplo)
 
 	DOMINIOS = [["cbasicas"], ["civil"], ["computos"], ["decanato"], ["egresado"], ["electrica"], ["electronica"], ["extension"], ["industrial"], ["mecanica"], ["metalurgica"], ["org"], ["posgrado"], ["punilla"], ["quimica"], ["radio"], ["sa"], ["sae"], ["scdt"], ["sistemas"], ["tecnicatura"], ["virtual"], ["frc"]]
 
