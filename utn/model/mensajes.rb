@@ -38,10 +38,44 @@ module Model
 		end
 
 		def mensajes( opciones = {} )
-			#Opciones validas: :desde, :hasta (por ahora)
+			#Opciones validas: :desde, :hasta (por ahora, ambas son fechas
+			#o valores equivalentes - Strings, numeros en formato aaaammdd)
 			#Devuelve todos los mensajes de la pagina (almacenados localmente)
 
-			@mensajes if opciones.empty?
+
+			return @mensajes if opciones.empty? || @mensajes.empty?
+
+			mensajes_buscados = []
+
+			fecha_desde = if opciones[:desde] 
+				(opciones[:desde].class == String ||
+					opciones[:desde].class == Integer) ?
+				Date.parse(opciones[:desde].to_s) : opciones[:desde]
+			else
+				#Asegurandonos de devolver todos los mensajes ':hasta'
+				#si no hay un :desde
+
+				@mensajes.last.fecha
+			end	
+
+			fecha_hasta = if opciones[:hasta]
+				(opciones[:hasta].class == String ||
+					opciones[:hasta].class == Integer) ?
+				Date.parse(opciones[:hasta].to_s) : opciones[:hasta]
+			else 
+				#Al reves del caso else de fecha_desde
+
+				Date.today
+			end		
+
+			rango_mensajes = (fecha_desde..fecha_hasta)
+
+			@mensajes.each do |m|
+				break if m.fecha < rango_mensajes.min
+				mensajes_buscados << m if rango_mensajes.cover? m.fecha
+			end
+
+			mensajes_buscados
 		end
 
 		private
@@ -49,6 +83,9 @@ module Model
 		def procesar_html(html)
 			#TODO: Tener en cuenta mensajes viejos, guardados en disco????
 			
+			#Procesa los mensajes descargados, desde el mas reciente al mas antiguo
+			#hasta que no hay mas mensajes nuevos (sin haber sido procesados)
+
 			mensajes_nuevos = []
 
 			html.css('.dikdor').each do |dikdor|
