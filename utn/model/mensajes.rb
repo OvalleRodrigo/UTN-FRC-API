@@ -5,8 +5,6 @@ require 'date'
 module Model
 
 	class GestorMensajes
-
-
 		# Si bien en AG3 se hace referencia a "Mensajes" como a aquellos de "Matricula" 
 		# y "Notas" de docentes, aca nos referimos solo a las "Notas". 
 
@@ -18,8 +16,13 @@ module Model
 				"http://www.frc.utn.edu.ar/academico3/mensajes.frc",
 				headers: {'Cookie' => @cookie},
 				body: { 'tipo' => 'NOTAS'})
-			@mensajes = []
-			@mensajes += procesar_html(Nokogiri::HTML(html_mensajes))
+
+			#TODO: Guardar y levantar mensajes
+			@mensajes = {}
+			@mensajes.merge!(procesar_html(Nokogiri::HTML(html_mensajes))){
+				#Si ya hay mensajes en la fecha, concatenar array nuevo + viejo
+				|key, v1, v2| v2<<v1
+			}
 		end
 
 		def mensajes_nuevos
@@ -30,14 +33,18 @@ module Model
 				headers: {'Cookie' => @cookie},
 				body: { 'tipo' => 'NOTAS'})
 
-			raise "Sesion expirada, imposible recuperar mensajes nuevos" if html_mensajes.code != 200
+			raise "Sesion expirada, imposible recuperar mensajes nuevos" if	html_mensajes.code != 200
 			
 			nuevos = procesar_html(Nokogiri::HTML(html_mensajes))
-			@mensajes.insert(0, *nuevos) unless nuevos.empty?
-			nuevos
-		end
+			@mensajes.merge!(nuevos){
+				#Si ya hay mensajes en la fecha, concatenar array nuevo + viejo
+				|key, v1, v2| v2<<v1
+				} unless nuevos.empty?
 
-		def mensajes( opciones = {} )
+				nuevos
+			end
+
+			def mensajes( opciones = {} )
 			#Opciones validas: :desde, :hasta (por ahora, ambas son fechas
 			#o valores equivalentes - Strings, numeros en formato aaaammdd)
 			#Devuelve todos los mensajes de la pagina (almacenados localmente)
@@ -45,17 +52,15 @@ module Model
 
 			return @mensajes if opciones.empty? || @mensajes.empty?
 
-			mensajes_buscados = []
-
 			fecha_desde = if opciones[:desde] 
 				(opciones[:desde].class == String ||
 					opciones[:desde].class == Integer) ?
 				Date.parse(opciones[:desde].to_s) : opciones[:desde]
 			else
-				#Asegurandonos de devolver todos los mensajes ':hasta'
-				#si no hay un :desde
+				#Asegurandonos de devolver todos los mensajes de este año 
+				#a la fecha ':hasta', si no hay un :desde
 
-				@mensajes.last.fecha
+				Date.parse("01/01/#{Date.today.year}")
 			end	
 
 			fecha_hasta = if opciones[:hasta]
@@ -70,10 +75,9 @@ module Model
 
 			rango_mensajes = (fecha_desde..fecha_hasta)
 
-			@mensajes.each do |m|
-				break if m.fecha < rango_mensajes.min
-				mensajes_buscados << m if rango_mensajes.cover? m.fecha
-			end
+			mensajes_buscados = @mensajes.select { 
+				|key, value| rango_mensajes.cover? key
+			}
 
 			mensajes_buscados
 		end
@@ -82,13 +86,15 @@ module Model
 
 		def procesar_html(html)
 			#TODO: Tener en cuenta mensajes viejos, guardados en disco????
+			#TODO: Que pasa si elimino un mensaje de la web????
 			
 			#Procesa los mensajes descargados, desde el mas reciente al mas antiguo
 			#hasta que no hay mas mensajes nuevos (sin haber sido procesados)
 
-			mensajes_nuevos = []
+			mensajes_nuevos = Hash.new{ |hash, key| hash[key] = []}
 
 			html.css('.dikdor').each do |dikdor|
+				#dikdor es la clase html donde comienza cada mensaje, la '>'
 				comision = dikdor.next.next
 				fecha = comision.next.next
 				autor = fecha.next.next
@@ -100,8 +106,10 @@ module Model
 					cuerpo.text)
 
 				#Para evitar reprocesar todos los mensajes
-				break if @mensajes.first == mensaje
-				mensajes_nuevos << mensaje
+				break if @mensajes[mensaje.fecha] &&
+						@mensajes[mensaje.fecha].include?(mensaje)
+
+				mensajes_nuevos[mensaje.fecha] << mensaje
 			end
 
 			mensajes_nuevos
