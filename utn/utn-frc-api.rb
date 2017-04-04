@@ -85,6 +85,10 @@ module UTN
 			true
 		end
 
+		def calendario
+			Model::Calendario.new(@academico3)
+		end
+
 
 	end
 
